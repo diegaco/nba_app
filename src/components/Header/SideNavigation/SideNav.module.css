@@ -1,0 +1,17 @@
+.navItem {
+  font-weight: 300;
+  font-size: 12px;
+  color: #bababa;
+  padding: 10px;
+  border-top: 1px solid #404040;
+}
+
+.navItem > a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.navItem > a > span {
+  color: #fff;
+  margin-right: 10px;
+}

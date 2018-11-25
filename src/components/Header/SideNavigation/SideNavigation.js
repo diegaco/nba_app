@@ -1,5 +1,6 @@
 import React from "react";
 import SideNav from "react-simple-sidenav";
+import SideNavItems from "./SideNavItems";
 
 const SideNavigation = props => {
   return (
@@ -11,8 +12,7 @@ const SideNavigation = props => {
         maxWidth: "220px"
       }}
     >
-      <div>Home</div>
-      <div>News</div>
+      <SideNavItems />
     </SideNav>
   );
 };

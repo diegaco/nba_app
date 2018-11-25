@@ -1,0 +1,18 @@
+.footer {
+  margin-top: 20px;
+  background-color: #242424;
+  color: #878787;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo img {
+  height: 20px;
+  padding: 10px;
+}
+
+.pullRight {
+  flex-grow: 1;
+  font-size: 12px;
+}
