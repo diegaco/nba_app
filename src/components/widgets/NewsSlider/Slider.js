@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import SliderTemplate from "./SliderTemplate";
+import { API_URL } from "../../../config";
 
 class Slider extends Component {
   state = {
@@ -7,7 +8,9 @@ class Slider extends Component {
   };
 
   componentDidMount() {
-    fetch(`http://localhost:3004/articles?_start=0&_end=3`)
+    fetch(
+      `${API_URL}/articles?_start=${this.props.start}&_end=${this.props.amount}`
+    )
       .then(response => {
         return response.json();
       })
@@ -24,7 +27,13 @@ class Slider extends Component {
   }
 
   render() {
-    return <SliderTemplate type="featured" data={this.state.news} />;
+    return (
+      <SliderTemplate
+        type={this.props.type}
+        data={this.state.news}
+        settings={this.props.settings}
+      />
+    );
   }
 }
 

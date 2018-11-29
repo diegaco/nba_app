@@ -1,0 +1,13 @@
+.btnPrimary {
+  box-sizing: border-box;
+  text-align: center;
+  background-color: #2196f3;
+  border: 0;
+  font-weight: 500;
+  display: block;
+  width: 100%;
+  color: #fff;
+  padding: 10px 15px;
+  font-size: 15px;
+  cursor: pointer;
+}
