@@ -16,10 +16,10 @@ class NewsList extends Component {
   };
 
   componentDidMount() {
-    this.getData(this.state.start, this.state.end);
+    this.requestData(this.state.start, this.state.end);
   }
 
-  getData = (start, end) => {
+  requestData = (start, end) => {
     if (this.state.teams.length < 1) {
       fetch(`${API_URL}/teams?`)
         .then(response => {
@@ -38,7 +38,9 @@ class NewsList extends Component {
       })
       .then(data => {
         this.setState({
-          articles: [...this.state.articles, ...data]
+          articles: [...this.state.articles, ...data],
+          start,
+          end
         });
       });
   };
@@ -81,7 +83,7 @@ class NewsList extends Component {
 
   loadMore = () => {
     let end = this.state.end + this.state.amount;
-    this.getData(this.state.end, end);
+    this.requestData(this.state.end, end);
   };
 
   render() {
@@ -90,11 +92,7 @@ class NewsList extends Component {
         <TransitionGroup component="div" className="list">
           {this.renderNews(this.props.type)}
         </TransitionGroup>
-        <Button
-          type="loadmore"
-          loadMore={this.loadMore}
-          labelText="Load More News"
-        />
+        <Button type="loadmore" loadMore={this.loadMore} cta="Load More News" />
       </div>
     );
   }
