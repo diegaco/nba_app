@@ -74,6 +74,45 @@ class NewsList extends Component {
           </CSSTransition>
         ));
         break;
+      case "cardImage":
+        template = this.state.articles.map((item, i) => (
+          <CSSTransition
+            classNames={{
+              enter: styles.newsListWrapper,
+              enterActive: styles.newsListWrapperEnter
+            }}
+            timeout={500}
+            key={i}
+          >
+            <article key={item.id}>
+              <div
+                className={`${styles.newsListItem} ${
+                  styles.newsListItemWithImage
+                } `}
+              >
+                <Link to={`/articles/${item.id}`}>
+                  <div className={styles.newsListItemWrapper}>
+                    <div
+                      className={styles.newsListItemImage}
+                      style={{
+                        backgroundImage: `url(/images/articles/${item.image})`
+                      }}
+                    />
+                    <div className={styles.newsListItemContent}>
+                      <CardInfo
+                        teams={this.state.teams}
+                        teamId={item.team}
+                        date={item.date}
+                      />
+                      <h2 className={styles.newsListItemTitle}>{item.title}</h2>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            </article>
+          </CSSTransition>
+        ));
+        break;
       default:
         template = null;
         break;
@@ -82,7 +121,7 @@ class NewsList extends Component {
   };
 
   loadMore = () => {
-    let end = this.state.end + this.state.amount;
+    let end = Number(this.state.end) + Number(this.state.amount);
     this.requestData(this.state.end, end);
   };
 

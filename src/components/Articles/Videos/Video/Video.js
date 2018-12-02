@@ -13,7 +13,7 @@ class Video extends Component {
   };
 
   componentDidMount() {
-    fetch(`${API_URL}/videos?_id=${this.props.match.params.id}`)
+    fetch(`${API_URL}/videos?id=${this.props.match.params.id}`)
       .then(res => res.json())
       .then(data => {
         let articleVideo = data[0];
@@ -25,7 +25,6 @@ class Video extends Component {
               articleVideo,
               team: data
             });
-
             this.getRelated();
           });
       });
