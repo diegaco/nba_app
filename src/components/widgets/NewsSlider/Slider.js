@@ -1,28 +1,30 @@
 import React, { Component } from "react";
 import SliderTemplate from "./SliderTemplate";
-import { API_URL } from "../../../config";
+import { firebaseLooper, firebaseArticles } from "../../../firebase";
 
 class Slider extends Component {
   state = {
     news: []
   };
 
+  _isMounted = false;
+
+  componentWillUnmount() {
+    this._isMounted = false;
+  }
+
   componentDidMount() {
-    fetch(
-      `${API_URL}/articles?_start=${this.props.start}&_end=${this.props.amount}`
-    )
-      .then(response => {
-        return response.json();
-      })
-      .then(data => {
-        this.setState({
-          news: data
-        });
-      })
-      .catch(error => {
-        throw new Error(
-          "Hubo un problema con la petición Fetch:" + error.message
-        );
+    this._isMounted = true;
+    firebaseArticles
+      .limitToFirst(3)
+      .once("value")
+      .then(snapshot => {
+        const news = firebaseLooper(snapshot);
+        if (this._isMounted) {
+          this.setState({
+            news
+          });
+        }
       });
   }
 

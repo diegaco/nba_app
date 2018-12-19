@@ -2,7 +2,11 @@ import React, { Component } from "react";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import styles from "./NewsList.module.css";
 import { Link } from "react-router-dom";
-import { API_URL } from "../../../config";
+import {
+  firebaseArticles,
+  firebaseTeams,
+  firebaseLooper
+} from "../../../firebase";
 import Button from "../Button/";
 import CardInfo from "../CardInfo/";
 
@@ -15,35 +19,48 @@ class NewsList extends Component {
     amount: this.props.amount
   };
 
+  _isMounted = false;
+
   componentDidMount() {
+    this._isMounted = true;
     this.requestData(this.state.start, this.state.end);
   }
 
   requestData = (start, end) => {
     if (this.state.teams.length < 1) {
-      fetch(`${API_URL}/teams?`)
-        .then(response => {
-          return response.json();
-        })
-        .then(data => {
+      firebaseTeams.once("value").then(snapshot => {
+        const teams = firebaseLooper(snapshot);
+        if (this._isMounted) {
           this.setState({
-            teams: data
+            teams
           });
-        });
+        }
+      });
     }
 
-    fetch(`${API_URL}/articles?_start=${start}&_end=${end}`)
-      .then(response => {
-        return response.json();
+    firebaseArticles
+      .orderByChild("id")
+      .startAt(start)
+      .endAt(end)
+      .once("value")
+      .then(snapshot => {
+        const articles = firebaseLooper(snapshot);
+        if (this._isMounted) {
+          this.setState({
+            articles: [...this.state.articles, ...articles],
+            start,
+            end
+          });
+        }
       })
-      .then(data => {
-        this.setState({
-          articles: [...this.state.articles, ...data],
-          start,
-          end
-        });
+      .catch(err => {
+        throw new Error(err);
       });
   };
+
+  componentWillUnmount() {
+    this._isMounted = false;
+  }
 
   renderNews = type => {
     let template = "";
@@ -122,7 +139,7 @@ class NewsList extends Component {
 
   loadMore = () => {
     let end = Number(this.state.end) + Number(this.state.amount);
-    this.requestData(this.state.end, end);
+    this.requestData(this.state.end + 1, end);
   };
 
   render() {

@@ -1,7 +1,11 @@
 import React, { Component } from "react";
 import Button from "../Button";
 import styles from "./VideosList.module.css";
-import { API_URL } from "../../../config";
+import {
+  firebaseTeams,
+  firebaseVideos,
+  firebaseLooper
+} from "../../../firebase";
 import VideoTemplate from "./VideoTemplate";
 
 class VideosList extends Component {
@@ -15,20 +19,23 @@ class VideosList extends Component {
 
   requestData = (start, end) => {
     if (this.state.teams.length < 1) {
-      fetch(`${API_URL}/teams`)
-        .then(response => response.json())
-        .then(data => {
-          this.setState({
-            teams: data
-          });
+      firebaseTeams.once("value").then(snapshot => {
+        const teams = firebaseLooper(snapshot);
+        this.setState({
+          teams
         });
+      });
     }
 
-    fetch(`${API_URL}/videos?_start=${start}&_end=${end}`)
-      .then(response => response.json())
-      .then(data => {
+    firebaseVideos
+      .orderByChild("id")
+      .startAt(start)
+      .endAt(end)
+      .once("value")
+      .then(snapshot => {
+        const videos = firebaseLooper(snapshot);
         this.setState({
-          videos: [...this.state.videos, ...data],
+          videos: [...this.state.videos, ...videos],
           start,
           end
         });
@@ -65,7 +72,7 @@ class VideosList extends Component {
 
   loadMore = () => {
     let end = this.state.end + this.state.amount;
-    this.requestData(this.state.end, end);
+    this.requestData(this.state.end + 1, end);
   };
 
   renderButton = () =>

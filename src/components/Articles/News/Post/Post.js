@@ -1,6 +1,10 @@
 import React, { Component } from "react";
 import ArticleHeader from "./ArticleHeader";
-import { API_URL } from "../../../../config";
+import {
+  firebaseDB,
+  firebaseTeams,
+  firebaseLooper
+} from "../../../../firebase";
 import styles from "../../Articles.module.css";
 
 class Post extends Component {
@@ -10,16 +14,22 @@ class Post extends Component {
   };
 
   componentDidMount() {
-    fetch(`${API_URL}/articles?id=${this.props.match.params.id}`)
-      .then(res => res.json())
-      .then(data => {
-        let article = data[0];
-        fetch(`${API_URL}/teams?id=${article.team}`)
-          .then(res => res.json())
-          .then(data => {
+    firebaseDB
+      .ref(`articles/${this.props.match.params.id}`)
+      .once("value")
+      .then(snapshot => {
+        let article = snapshot.val();
+
+        firebaseTeams
+          .orderByChild("teamId")
+          .equalTo(article.team)
+          .once("value")
+          .then(snapshot => {
+            let team = firebaseLooper(snapshot);
+
             this.setState({
               article,
-              team: data
+              team
             });
           });
       });

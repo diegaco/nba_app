@@ -1,5 +1,10 @@
 import React, { Component } from "react";
-import { API_URL } from "../../../../config";
+import {
+  firebaseDB,
+  firebaseTeams,
+  firebaseVideos,
+  firebaseLooper
+} from "../../../../firebase";
 import VideoHeader from "./VideoHeader";
 import VideosRelated from "../../../widgets/VideosList/VideosRelated/";
 import styles from "../../Articles.module.css";
@@ -13,17 +18,22 @@ class Video extends Component {
   };
 
   componentDidMount() {
-    fetch(`${API_URL}/videos?id=${this.props.match.params.id}`)
-      .then(res => res.json())
-      .then(data => {
-        let articleVideo = data[0];
+    firebaseDB
+      .ref(`videos/${this.props.match.params.id}`)
+      .once("value")
+      .then(snapshot => {
+        let articleVideo = snapshot.val();
 
-        fetch(`${API_URL}/teams?id=${articleVideo.team}`)
-          .then(res => res.json())
-          .then(data => {
+        firebaseTeams
+          .orderByChild("teamId")
+          .equalTo(articleVideo.team)
+          .once("value")
+          .then(snapshot => {
+            let team = firebaseLooper(snapshot);
+
             this.setState({
               articleVideo,
-              team: data
+              team
             });
             this.getRelated();
           });
@@ -31,19 +41,22 @@ class Video extends Component {
   }
 
   getRelated = () => {
-    fetch(`${API_URL}/teams`)
-      .then(res => res.json())
-      .then(data => {
-        let teams = data;
-        fetch(`${API_URL}/videos?q=${this.state.team[0].city}&_limit=3`)
-          .then(res => res.json())
-          .then(data => {
-            this.setState({
-              teams,
-              related: data
-            });
+    firebaseTeams.once("value").then(snapshot => {
+      const teams = firebaseLooper(snapshot);
+
+      firebaseVideos
+        .orderByChild("team")
+        .equalTo(this.state.articleVideo.team)
+        .limitToFirst(3)
+        .once("value")
+        .then(snapshot => {
+          const related = firebaseLooper(snapshot);
+          this.setState({
+            teams,
+            related
           });
-      });
+        });
+    });
   };
 
   render() {
