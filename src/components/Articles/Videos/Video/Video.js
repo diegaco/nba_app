@@ -17,7 +17,7 @@ class Video extends Component {
     related: []
   };
 
-  componentDidMount() {
+  fetchData() {
     firebaseDB
       .ref(`videos/${this.props.match.params.id}`)
       .once("value")
@@ -38,6 +38,16 @@ class Video extends Component {
             this.getRelated();
           });
       });
+  }
+
+  componentDidMount() {
+    this.fetchData();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.match.params.id !== prevProps.match.params.id) {
+      this.fetchData();
+    }
   }
 
   getRelated = () => {
