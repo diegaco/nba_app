@@ -11,7 +11,7 @@
   text-decoration: none;
 }
 
-.navItem > a > span {
+.navItem span {
   color: #fff;
   margin-right: 10px;
 }
