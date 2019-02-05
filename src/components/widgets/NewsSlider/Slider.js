@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import SliderTemplate from "./SliderTemplate";
-import { firebaseLooper, firebaseArticles } from "../../../firebase";
+import { firebase, firebaseLooper, firebaseArticles } from "../../../firebase";
 
 class Slider extends Component {
   state = {
@@ -20,11 +20,32 @@ class Slider extends Component {
       .once("value")
       .then(snapshot => {
         const news = firebaseLooper(snapshot);
-        if (this._isMounted) {
-          this.setState({
-            news
+
+        const asyncFunction = (item, i, callback) => {
+          firebase
+            .storage()
+            .ref("images")
+            .child(item.image)
+            .getDownloadURL()
+            .then(url => {
+              news[i].image = url;
+              callback();
+            });
+        };
+
+        let requests = news.map((item, i) => {
+          return new Promise(resolve => {
+            asyncFunction(item, i, resolve);
           });
-        }
+        });
+
+        Promise.all(requests).then(() => {
+          if (this._isMounted) {
+            this.setState({
+              news
+            });
+          }
+        });
       });
   }
 

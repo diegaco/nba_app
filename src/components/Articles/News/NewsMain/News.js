@@ -11,7 +11,7 @@ const News = () => {
         amount="3"
         settings={{ dots: false }}
       />
-      <NewsList type="cardImage" loadmore={true} start={3} amount={7} />
+      <NewsList type="cardImage" loadmore={true} start={1} amount={5} />
     </div>
   );
 };

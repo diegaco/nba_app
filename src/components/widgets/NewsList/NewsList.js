@@ -3,6 +3,7 @@ import { CSSTransition, TransitionGroup } from "react-transition-group";
 import styles from "./NewsList.module.css";
 import { Link } from "react-router-dom";
 import {
+  firebase,
   firebaseArticles,
   firebaseTeams,
   firebaseLooper
@@ -45,13 +46,32 @@ class NewsList extends Component {
       .once("value")
       .then(snapshot => {
         const articles = firebaseLooper(snapshot);
-        if (this._isMounted) {
-          this.setState({
-            articles: [...this.state.articles, ...articles],
-            start,
-            end
+
+        const asyncFunction = (item, i, cb) => {
+          firebase
+            .storage()
+            .ref("images")
+            .child(item.image)
+            .getDownloadURL()
+            .then(url => {
+              articles[i].image = url;
+              cb();
+            });
+        };
+
+        let requests = articles.map((item, i) => {
+          return new Promise(resolve => {
+            asyncFunction(item, i, resolve);
           });
-        }
+        });
+
+        Promise.all(requests).then(() => {
+          if (this._isMounted) {
+            this.setState({
+              articles: [...this.state.articles, ...articles]
+            });
+          }
+        });
       })
       .catch(err => {
         throw new Error(err);
@@ -112,7 +132,7 @@ class NewsList extends Component {
                     <div
                       className={styles.newsListItemImage}
                       style={{
-                        backgroundImage: `url(/images/articles/${item.image})`
+                        backgroundImage: `url(${item.image})`
                       }}
                     />
                     <div className={styles.newsListItemContent}>
