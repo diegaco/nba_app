@@ -48,3 +48,8 @@
   margin-top: 5px;
   padding: 5px;
 }
+
+.PostContainer select {
+  font-size: 20px;
+  margin-top: 10px;
+}

@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import ArticleHeader from "./ArticleHeader";
 import {
   firebaseDB,
+  firebase,
   firebaseTeams,
   firebaseLooper
 } from "../../../../firebase";
@@ -10,7 +11,8 @@ import styles from "../../Articles.module.css";
 class Post extends Component {
   state = {
     article: [],
-    team: []
+    team: [],
+    imageURL: ""
   };
 
   componentDidMount() {
@@ -31,9 +33,24 @@ class Post extends Component {
               article,
               team
             });
+
+            this.getImageURL(article.image);
           });
       });
   }
+
+  getImageURL = filename => {
+    firebase
+      .storage()
+      .ref("images")
+      .child(filename)
+      .getDownloadURL()
+      .then(url => {
+        this.setState({
+          imageURL: url
+        });
+      });
+  };
 
   render() {
     const { article } = this.state;
@@ -51,10 +68,13 @@ class Post extends Component {
           <div
             className={styles.articleImage}
             style={{
-              backgroundImage: `url('/images/articles/${article.image}')`
+              backgroundImage: `url('${this.state.imageURL}')`
             }}
           />
-          <div className={styles.articleText}>{article.body}</div>
+          <div
+            className={styles.articleText}
+            dangerouslySetInnerHTML={{ __html: article.body }}
+          />
         </div>
       </div>
     );

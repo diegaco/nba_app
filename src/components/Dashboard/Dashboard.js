@@ -1,10 +1,13 @@
 import React, { Component } from "react";
 import FormField from "../widgets/FormFields/";
 import style from "./Dashboard.module.css";
+import { firebaseTeams, firebaseArticles, firebase } from "../../firebase";
 
 import { Editor } from "react-draft-wysiwyg";
-import { EditorState, convertFromRaw, convertToRaw } from "draft-js";
+// import { EditorState, convertFromRaw, convertToRaw } from "draft-js";
+import { EditorState } from "draft-js";
 import { stateToHTML } from "draft-js-export-html";
+import Uploader from "../widgets/FileUploader";
 
 class Dashboard extends Component {
   state = {
@@ -41,8 +44,73 @@ class Dashboard extends Component {
         valid: false,
         touched: false,
         validationMessage: ""
+      },
+      body: {
+        element: "texteditor",
+        value: "",
+        valid: true
+      },
+      image: {
+        element: "image",
+        value: "",
+        valid: true
+      },
+      team: {
+        element: "select",
+        value: "",
+        config: {
+          name: "team_input",
+          options: []
+        },
+        validation: {
+          required: true
+        },
+        valid: false,
+        touched: false,
+        validationMessage: ""
+      },
+      tags: {
+        element: "input",
+        value: "",
+        config: {
+          name: "tags_input",
+          type: "text",
+          placeholder: "Enter the tags"
+        },
+        validation: {
+          required: false
+        },
+        valid: false,
+        touched: false,
+        validationMessage: ""
       }
     }
+  };
+
+  componentDidMount = () => {
+    this.loadTeams();
+  };
+
+  loadTeams = () => {
+    let teams = [];
+    firebaseTeams.once("value").then(snapshot => {
+      snapshot.forEach(childSnapshot => {
+        teams.push({
+          id: childSnapshot.val().id,
+          name: childSnapshot.val().city
+        });
+      });
+
+      const newFormData = { ...this.state.formData };
+      const newElement = { ...newFormData["team"] };
+
+      newElement.config.options = teams;
+      newFormData["team"] = newElement;
+
+      this.setState({
+        formData: newFormData
+      });
+    });
   };
 
   submitForm = event => {
@@ -52,7 +120,11 @@ class Dashboard extends Component {
     let formIsValid = true;
 
     for (let key in this.state.formData) {
-      dataToSubmit[key] = this.state.formData[key].value;
+      if (this.state.formData[key] === "tags") {
+        dataToSubmit[key] = this.state.formData[key].value.split(",");
+      } else {
+        dataToSubmit[key] = this.state.formData[key].value;
+      }
     }
 
     for (let key in this.state.formData) {
@@ -60,7 +132,38 @@ class Dashboard extends Component {
     }
 
     if (formIsValid) {
-      console.log("Submit Post");
+      console.log(dataToSubmit);
+
+      this.setState({
+        loading: true,
+        postError: ""
+      });
+
+      firebaseArticles
+        .orderByChild("id")
+        .limitToLast(1)
+        .once("value")
+        .then(snapshot => {
+          let articleId = null;
+          snapshot.forEach(childSnapshot => {
+            articleId = childSnapshot.val().id;
+          });
+
+          dataToSubmit["date"] = firebase.database.ServerValue.TIMESTAMP;
+          dataToSubmit["id"] = articleId + 1;
+          dataToSubmit["team"] = parseInt(dataToSubmit["team"]);
+
+          firebaseArticles
+            .push(dataToSubmit)
+            .then(post => {
+              this.props.history.push(`/articles/${post.key}`);
+            })
+            .catch(e => {
+              this.setState({
+                postError: e.message
+              });
+            });
+        });
     } else {
       this.setState({
         postError: "Something went wrong"
@@ -80,7 +183,7 @@ class Dashboard extends Component {
     return error;
   };
 
-  handleFormChange = element => {
+  handleFormChange = (element, content = "") => {
     const newFormData = {
       ...this.state.formData
     };
@@ -89,7 +192,11 @@ class Dashboard extends Component {
       ...newFormData[element.id]
     };
 
-    newElement.value = element.event.target.value;
+    if (content === "") {
+      newElement.value = element.event.target.value;
+    } else {
+      newElement.value = content;
+    }
 
     if (element.blur) {
       let validData = this.validate(newElement);
@@ -121,11 +228,31 @@ class Dashboard extends Component {
       ""
     );
 
+  onEditorStateChange = editorState => {
+    let contentState = editorState.getCurrentContent();
+    // This is generally what is gonna be stored in firebase (a json object with some data)
+    // let rawState = convertToRaw(contentState);
+
+    let html = stateToHTML(contentState);
+
+    this.handleFormChange({ id: "body" }, html);
+
+    this.setState({
+      editorState
+    });
+  };
+
+  storeFilename = filename => {
+    this.handleFormChange({ id: "image" }, filename);
+  };
+
   render() {
     return (
       <div className={style.PostContainer}>
         <form onSubmit={this.submitForm}>
           <h2>Add Post</h2>
+
+          <Uploader storeFilename={filename => this.storeFilename(filename)} />
 
           <FormField
             id={"author"}
@@ -143,6 +270,18 @@ class Dashboard extends Component {
             wrapperClassName="myEditor-wrapper"
             editorClassName="myEditor-editor"
             onEditorStateChange={this.onEditorStateChange}
+          />
+
+          <FormField
+            id={"team"}
+            formData={this.state.formData.team}
+            handleChange={element => this.handleFormChange(element)}
+          />
+
+          <FormField
+            id={"tags"}
+            formData={this.state.formData.tags}
+            handleChange={element => this.handleFormChange(element)}
           />
 
           {this.submitButton()}
